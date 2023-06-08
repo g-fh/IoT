@@ -1,0 +1,1284 @@
+<!-- 260223 -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Config Tool</title>
+    <style>
+        .panel-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            max-width: 500px;
+            width: 80%;
+            margin: auto 0;
+            background: #E0F0FF;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 2px 2px 10px 3px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.5);
+            display: none;
+            opacity: 0;
+        }
+
+        .title-bar {
+            text-align: center;
+            padding: 5px;
+            color: #FFF;
+            margin: 0;
+            width: 100%;
+            background: #007FFF;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: red;
+            aspect-ratio: 1/1;
+            height: 100%;
+            text-align: center;
+            color: #FFF;
+            padding: 0px;
+            margin: auto;
+            cursor: pointer;
+        }
+
+        .panel-title-container {
+            user-select: none;
+            position: relative;
+            height: max-content;
+        }
+
+        .panel-title-container .title-bar {
+            cursor: move;
+        }
+
+
+        /* Spit Resize[BEGIN] */
+        .split_view_container {
+            display: flex;
+            padding: 2px;
+            height: 16rem;
+            width: 100%;
+        }
+
+        .split_view_LEFT {
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .resizer {
+            background-color: rgba(0, 0, 0, 0.3);
+            cursor: ew-resize;
+            height: 100%;
+            width: 2px;
+            margin: 0 2px;
+        }
+
+        .split_view_RIGHT {
+            flex: 1;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Spit Resize[END] */
+    </style>
+    <script>
+
+    </script>
+    <link rel="stylesheet" href="srcCSS_main.css" />
+    <link rel="stylesheet" href="srcCSS_jsonTree.css">
+    <script type="text/javascript" src="srcJS_util.js"></script>
+    <script type="text/javascript" src="srcJS_json.js"></script>
+    <script type="text/javascript" src="srcJS_ui.js"></script>
+    <script src="srcJS_jsonTree.js"></script>
+    <script type="text/javascript" src="srcJS_file_handle.js"></script>
+    <script type="text/javascript" src="srcJS_uart.js"></script>
+    <!-- <script type="text/javascript" src="srcJS_uart_2.js" ></script> -->
+    <script type="text/javascript" src="srcJS_table.js"></script>
+</head>
+
+<body>
+    <style>
+        table,
+        table * {
+            box-sizing: border-box;
+        }
+
+        #param_table_holder {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-auto-rows: auto;
+            padding: 5px;
+            grid-gap: 3px;
+            overflow: scroll;
+            border: 2px solid #aaa;
+        }
+
+        table.floating_table {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 0px;
+            border-radius: 3px;
+            overflow: hidden;
+            width: 200px;
+            table-layout: fixed;
+            border-collapse: collapse;
+            text-align: center;
+            display: inline-block;
+            box-shadow: 2px 2px 15px 2px rgba(0, 0, 0, 0.4);
+        }
+
+        #param_table_holder table:not(.floating_table) {
+            padding: 0;
+            width: 100%;
+            min-width: 190px;
+            max-width: 210px;
+            height: max-content;
+            border-collapse: collapse;
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        tr,
+        th,
+        td {
+            padding: 5px;
+            text-align: center;
+        }
+
+        /* tr{padding: 0;} */
+
+        th {
+            user-select: none;
+            background: #64B5F6;
+            color: #FFF;
+        }
+
+        td {
+            background: #BBDEFB;
+        }
+
+        table caption {
+            user-select: none;
+            background: #2196F3;
+            color: #FFF;
+            padding: 5px;
+            cursor: move;
+            caption-side: inline-end;
+            border: 1px solid rgba(0, 0, 0, 0.4);
+        }
+
+        td input[type="number"],
+        td input[type="text"] {
+            margin: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        table tr div p {
+            padding: 0;
+            padding-left: 5px;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+    </style>
+
+
+
+
+
+    <div class="appMainContainer" style="height: 95vh;">
+        <h1 class="title">Config Tool</h1>
+
+        <!-- ################################################################################################################# -->
+        <!-- ######################################### File and Serial Controls[BEGIN] ####################################### -->
+        <!-- ################################################################################################################# -->
+        <div class="wrappers"
+            style="overflow: scroll; background: #E3F2FD; padding: 10px; border-radius: 5px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; grid-auto-rows: 30px; grid-gap: 10px;">
+            <!-- file button -->
+            <input class="btn" id="fileSelectBtn" type="button" value="Open File" onclick="ID('fileLabel').click()" />
+            <div style="display: none;">
+                <label id="fileLabel" for="fileBtn">Choose File</label>
+                <input type="file" id="fileBtn" name="fileinput" onchange='openFile(event)' />
+            </div>
+            <!-- file button -->
+            <select id="uploadFormat" style="background: #E0F0FF; border-radius: 4px; border: 1px solid #007FFF;">
+                <option value=0 selected>Uint8Array</option>
+                <option value=1>HEX String</option>
+            </select>
+            <select id="baudRateOpt" style="background: #E0F0FF; border-radius: 4px; border: 1px solid #007FFF;">
+                <option value="9600">9600</option>
+                <option value="19200">19200</option>
+                <option value="38400">38400</option>
+                <option value="115200">115200</option>
+                <option value="500000" selected>500000</option>
+            </select>
+            <input class="btn notConnected" id="connectBtn" type=button value="Connect" onclick="connectBtnOnClick()" />
+            <input class="btn" type="button" value="Upload" onclick="uploadBtnOnClick()" />
+            <input class="btn" type="button" value="Export" onclick="exportJSON(JSON.stringify(JSON_OBJ, null, 5));" />
+            <input class="btn" type="button" value="Open Log" onclick="openPanel('log_panel',3)" />
+            <input class="btn" type="button" value="Tree View" onclick="openPanel('jsonTree_panel',3)" />
+            <input class="btn" type="button" value="Check ID"
+                onclick="checkResponse('WHO_ARE_YOU','RESPONSE_',responseTimeout)" />
+            <input class="btn" type="button" value="Check V I"
+                onclick="checkResponse('VOLTAGE_CURRENT','RESPONSE_',responseTimeout)" />
+        </div>
+        <!-- ################################################################################################################# -->
+        <!-- ########################################### File and Serial Controls[END] ####################################### -->
+        <!-- ################################################################################################################# -->
+
+
+        <hr style="border: none; border-bottom: 1px solid #aaa;" />
+
+
+        <!-- ################################################################################################################# -->
+        <!-- ###################################### JSON Tree & Parameters Edit[BEGIN] ####################################### -->
+        <!-- ################################################################################################################# -->
+
+        <div id="userContainer">
+            <div id="param_table_holder" style="position: relative; top:0; height: 400px; overflow: scroll;">
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeydown="console.updateValue('moveup[0].current.motor_1.fullLoad.min')" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="updateValue('moveup[0].current.motor_1.fullLoad.max')" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="updateValue('moveup[0].current.motor_1.fullLoad.avr')" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+                <table>
+                    <caption>Motor 1</caption>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Current</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>A</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volatge</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>V</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power</td>
+                        <td>
+                            <div
+                                style="display: grid; grid-template-columns: 3fr 1fr; grid-auto-rows: auto; width: 100%;">
+                                <input type="number" value=""
+                                    onkeyup="onKey(event, 'Enter', (el)=>{ sendString(el.value) })" />
+                                <p>W</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+
+            </div><!-- #userContainer -->
+
+
+
+
+
+
+
+
+
+
+            <!-- ################################################################################################################# -->
+            <!-- ############################################## Panels [BEGIN] ################################################### -->
+            <!-- ################################################################################################################# -->
+            <div class="panel-container" id="log_panel">
+                <div class="panel-title-container">
+                    <p class="title-bar" id="log_panel_drag_trigger">Log Box</p>
+                    <p class="close-btn" onclick="closePanel('log_panel')">X</p>
+                </div>
+                <div class="split_view_container">
+                    <div class="split_view_LEFT" style="width: 45%;">
+                        <textarea id="serialData" rows="10" spellcheck="false"
+                            style="width:100%; height: 100%; margin:0; font-size: 0.7rem; border-radius:5px; resize:none; border:1px solid rgba(0, 0, 0, 0.5);"></textarea>
+                    </div>
+                    <div class="resizer" id="resizer" style=""></div>
+                    <div class="split_view_RIGHT">
+                        <pre id="log"
+                            style="width:100%; height: 100%; background:#000; color:#fff; font-size:0.6rem; padding:4px; margin: 0; box-sizing:border-box; border:1px solid #ddd; border-radius:5px; overflow: scroll"></pre>
+                    </div>
+                </div>
+
+                <div class="wrappers"
+                    style="overflow: scroll; background: #E3F2FD; padding: 10px; border-radius: 5px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; grid-auto-rows: 30px; grid-gap: 10px;">
+                    <select id="sendFormat" style="background: #E0F0FF; border-radius: 4px; border: 1px solid #007FFF;">
+                        <option value=0 selected>CSV HEX</option>
+                        <option value=1>String</option>
+                    </select>
+                    <input class="btn" type="button" value="Send" onclick="sendTextareaData()" />
+                    <input class="btn" type="button" value="'H'" onclick="sendString('H')" />
+                    <input class="btn" type="button" value="'L'" onclick="sendString('L')" />
+                    <input class="btn" type="button" value="Log Staus" onclick="logControlsStatus()" />
+                    <input class="btn" type="button" value="Clear Log" onclick="ID('log').innerHTML = '';" />
+                    <input class="btn" type="button" value="Log JSON"
+                        onclick="ID('log').innerHTML = JSON.stringify(JSON_OBJ, null, 5);" />
+                </div>
+            </div>
+            <!-- ############################################## Panel Separator ################################################## -->
+            <div class="panel-container" id="jsonTree_panel">
+                <div class="panel-title-container">
+                    <p class="title-bar" id="jsonTree_panel_drag_trigger">Tree View</p>
+                    <p class="close-btn" onclick="closePanel('jsonTree_panel')">X</p>
+                </div>
+                <div id="userTreeContainer" style="min-height: 150px;">
+                    <pre id="myTreeView" style="max-height: 300px; overflow: scroll; margin: 0;"></pre>
+                </div>
+            </div>
+            <!-- ############################################## Panel Separator ################################################## -->
+            <!-- ############################################## Panel Separator ################################################## -->
+            <!-- ############################################## Panel Separator ################################################## -->
+            <!-- ############################################## Panel Separator ################################################## -->
+            <!-- ############################################## Panel Separator ################################################## -->
+
+            <!-- ################################################################################################################# -->
+            <!-- ################################################ Panels [END] ################################################### -->
+            <!-- ################################################################################################################# -->
+        </div><!-- .appMainContainer -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <script>
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // Query the element
+                const resizer = document.getElementById('resizer');
+                const leftSide = resizer.previousElementSibling;
+                const rightSide = resizer.nextElementSibling;
+
+                // The current position of mouse
+                let x = 0;
+                let y = 0;
+                let leftWidth = 0;
+
+                // Handle the mousedown event
+                // that's triggered when user drags the resizer
+                const mouseDownHandler = function (e) {
+                    // Get the current mouse position
+                    x = e.clientX;
+                    y = e.clientY;
+                    leftWidth = leftSide.getBoundingClientRect().width;
+
+                    // Attach the listeners to `document`
+                    document.addEventListener('mousemove', mouseMoveHandler);
+                    document.addEventListener('mouseup', mouseUpHandler);
+                };
+
+                const mouseMoveHandler = function (e) {
+                    // How far the mouse has been moved
+                    const dx = e.clientX - x;
+                    const dy = e.clientY - y;
+
+                    const newLeftWidth = ((leftWidth + dx) * 100) / resizer.parentNode.getBoundingClientRect().width;
+                    leftSide.style.width = `${newLeftWidth}%`;
+
+                    resizer.style.cursor = 'col-resize';
+                    document.body.style.cursor = 'col-resize';
+
+                    leftSide.style.userSelect = 'none';
+                    leftSide.style.pointerEvents = 'none';
+
+                    rightSide.style.userSelect = 'none';
+                    rightSide.style.pointerEvents = 'none';
+                };
+
+                const mouseUpHandler = function () {
+                    resizer.style.removeProperty('cursor');
+                    document.body.style.removeProperty('cursor');
+
+                    leftSide.style.removeProperty('user-select');
+                    leftSide.style.removeProperty('pointer-events');
+
+                    rightSide.style.removeProperty('user-select');
+                    rightSide.style.removeProperty('pointer-events');
+
+                    // Remove the handlers of `mousemove` and `mouseup`
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                };
+
+                // Attach the handler
+                resizer.addEventListener('mousedown', mouseDownHandler);
+            });
+
+
+
+
+
+
+
+            function onKey(e, key, callback) {
+                if (e.key != key) return;
+                callback(e.target);
+            }
+
+
+
+
+
+
+
+            dragFunc('log_panel_drag_trigger', 'log_panel');
+            dragFunc('jsonTree_panel_drag_trigger', 'jsonTree_panel');
+
+        //dragFunc('table_1_trig', 'table_1');
+        //dragFunc('table_2_trig', 'table_2');
+
+        </script>
+</body>
+
+</html>
