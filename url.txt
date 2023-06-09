@@ -1,6 +1,6 @@
 Generated From : https://raw.githack.com/
 CSV File Path (C) : https://raw.githack.com/g-fh/IoT/main/C.csv
-CSV File Path (CC) : https://raw.githack.com/g-fh/IoT/main/C.csv
+CSV File Path (CC) : https://raw.githack.com/g-fh/IoT/main/CC.csv
 
 
 Important Notes : 
